@@ -11,3 +11,4 @@ export const adminApi = {
     return response.data;
   },
 };
+

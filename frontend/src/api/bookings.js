@@ -31,3 +31,4 @@ export const bookingsApi = {
     return response.data;
   },
 };
+

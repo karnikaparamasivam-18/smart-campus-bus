@@ -184,3 +184,4 @@ export default function BookTicket() {
     </div>
   );
 }
+
