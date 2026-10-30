@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { bookingsApi } from '../../api/bookings';
+import { routesApi } from '../../api/routes';
 import toast from 'react-hot-toast';
 import {
   TicketIcon,
@@ -10,12 +11,12 @@ import {
   TrashIcon,
   CreditCardIcon,
   RefreshIcon,
-  CheckCircleIcon,
-  XCircleIcon,
+  BusIcon,
 } from '../../components/Icons';
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
+  const [routesMap, setRoutesMap] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedQR, setSelectedQR] = useState(null); // stores booking for QR modal
@@ -23,8 +24,16 @@ export default function MyBookings() {
   const fetchBookings = async () => {
     setIsLoading(true);
     try {
-      const data = await bookingsApi.getMyBookings();
-      setBookings(data);
+      const [bookingsData, routesData] = await Promise.all([
+        bookingsApi.getMyBookings(),
+        routesApi.getRoutes().catch(() => []),
+      ]);
+      setBookings(bookingsData);
+      const map = {};
+      routesData.forEach((r) => {
+        map[r.id] = r;
+      });
+      setRoutesMap(map);
     } catch (err) {
       console.error(err);
       toast.error('Failed to load your bookings');
@@ -132,75 +141,96 @@ export default function MyBookings() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBookings.map((b) => (
-            <div
-              key={b.id}
-              className="bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-6 flex flex-col justify-between transition-all hover:shadow-xl shadow-sm"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="font-mono text-xs font-bold text-slate-300 bg-slate-950 px-2.5 py-1 rounded-md border border-slate-800">
-                    #{b.booking_reference}
-                  </span>
-                  <span
-                    className={`text-[11px] px-2.5 py-0.5 rounded-full font-mono uppercase font-semibold border ${getStatusBadge(
-                      b.status
-                    )}`}
-                  >
-                    {b.status}
-                  </span>
-                </div>
-
-                <div className="space-y-3 py-3 border-y border-slate-800/80 my-3 text-xs text-slate-300">
-                  <div className="flex items-center space-x-2">
-                    <CalendarIcon className="w-4 h-4 text-indigo-400" />
-                    <span>
-                      Travel Date: <strong className="text-white">{new Date(b.travel_date).toLocaleDateString()}</strong>
+          {filteredBookings.map((b) => {
+            const routeInfo = routesMap[b.route_id];
+            return (
+              <div
+                key={b.id}
+                className="bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-2xl p-6 flex flex-col justify-between transition-all hover:shadow-xl shadow-sm"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-mono text-xs font-bold text-slate-300 bg-slate-950 px-2.5 py-1 rounded-md border border-slate-800">
+                      #{b.booking_reference}
+                    </span>
+                    <span
+                      className={`text-[11px] px-2.5 py-0.5 rounded-full font-mono uppercase font-semibold border ${getStatusBadge(
+                        b.status
+                      )}`}
+                    >
+                      {b.status}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <ClockIcon className="w-4 h-4 text-violet-400" />
-                    <span>
-                      Booked On: <span className="text-slate-400">{new Date(b.created_at).toLocaleDateString()}</span>
-                    </span>
+
+                  {routeInfo && (
+                    <div className="mb-3">
+                      <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                        <BusIcon className="w-4 h-4 text-indigo-400 shrink-0" />
+                        <span>{routeInfo.route_name}</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 font-mono mt-1">
+                        {routeInfo.origin} → {routeInfo.destination}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-3 py-3 border-y border-slate-800/80 my-3 text-xs text-slate-300">
+                    <div className="flex items-center space-x-2">
+                      <CalendarIcon className="w-4 h-4 text-indigo-400" />
+                      <span>
+                        Travel Date:{' '}
+                        <strong className="text-white">
+                          {new Date(b.travel_date).toLocaleDateString()}
+                        </strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <ClockIcon className="w-4 h-4 text-violet-400" />
+                      <span>
+                        Booked On:{' '}
+                        <span className="text-slate-400">
+                          {new Date(b.created_at).toLocaleDateString()}
+                        </span>
+                      </span>
+                    </div>
                   </div>
                 </div>
+
+                {/* Actions Footer */}
+                <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                  {b.status === 'confirmed' && (
+                    <button
+                      onClick={() => setSelectedQR(b)}
+                      className="flex-1 py-2 px-3 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
+                    >
+                      <QrIcon className="w-4 h-4" />
+                      <span>View QR Pass</span>
+                    </button>
+                  )}
+
+                  {b.status === 'pending' && (
+                    <Link
+                      to={`/student/payment/${b.id}`}
+                      className="flex-1 py-2 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
+                    >
+                      <CreditCardIcon className="w-4 h-4" />
+                      <span>Pay Now</span>
+                    </Link>
+                  )}
+
+                  {b.status !== 'cancelled' && b.status !== 'used' && (
+                    <button
+                      onClick={() => handleCancelBooking(b.id)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      title="Cancel Booking"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
-
-              {/* Actions Footer */}
-              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                {b.status === 'confirmed' && (
-                  <button
-                    onClick={() => setSelectedQR(b)}
-                    className="flex-1 py-2 px-3 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
-                  >
-                    <QrIcon className="w-4 h-4" />
-                    <span>View QR Pass</span>
-                  </button>
-                )}
-
-                {b.status === 'pending' && (
-                  <Link
-                    to={`/student/payment/${b.id}`}
-                    className="flex-1 py-2 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
-                  >
-                    <CreditCardIcon className="w-4 h-4" />
-                    <span>Pay Now</span>
-                  </Link>
-                )}
-
-                {b.status !== 'cancelled' && b.status !== 'used' && (
-                  <button
-                    onClick={() => handleCancelBooking(b.id)}
-                    className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                    title="Cancel Booking"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -223,6 +253,11 @@ export default function MyBookings() {
               <p className="text-xs text-slate-400 font-mono mt-1">
                 Ref: {selectedQR.booking_reference}
               </p>
+              {routesMap[selectedQR.route_id] && (
+                <p className="text-xs text-indigo-400 font-semibold mt-1">
+                  {routesMap[selectedQR.route_id].route_name}
+                </p>
+              )}
             </div>
 
             {/* QR Code container */}
@@ -259,4 +294,3 @@ export default function MyBookings() {
     </div>
   );
 }
-

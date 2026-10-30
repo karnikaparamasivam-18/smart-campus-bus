@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { bookingsApi } from '../../api/bookings';
 import { routesApi } from '../../api/routes';
-import { BusIcon, TicketIcon, QrIcon, ArrowRightIcon, CalendarIcon, ClockIcon } from '../../components/Icons';
+import { BusIcon, TicketIcon, QrIcon, ArrowRightIcon, CalendarIcon } from '../../components/Icons';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [recentBookings, setRecentBookings] = useState([]);
+  const [totalBookingsCount, setTotalBookingsCount] = useState(0);
   const [routesCount, setRoutesCount] = useState(0);
+  const [routesMap, setRoutesMap] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -18,8 +20,14 @@ export default function StudentDashboard() {
           bookingsApi.getMyBookings(),
           routesApi.getRoutes(),
         ]);
+        setTotalBookingsCount(bookingsData.length);
         setRecentBookings(bookingsData.slice(0, 3));
         setRoutesCount(routesData.length);
+        const map = {};
+        routesData.forEach((r) => {
+          map[r.id] = r;
+        });
+        setRoutesMap(map);
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
       } finally {
@@ -54,7 +62,7 @@ export default function StudentDashboard() {
             </Link>
             <Link
               to="/student/bookings"
-              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-sm transition-all"
+              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-sm flex items-center space-x-2 transition-all"
             >
               <TicketIcon className="w-4 h-4" />
               <span>View My Bookings</span>
@@ -92,7 +100,7 @@ export default function StudentDashboard() {
               <p className="text-xs uppercase font-semibold text-slate-400 tracking-wider">
                 My Bookings
               </p>
-              <h3 className="text-2xl font-bold text-white mt-1">{recentBookings.length}</h3>
+              <h3 className="text-2xl font-bold text-white mt-1">{totalBookingsCount}</h3>
             </div>
             <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
               <TicketIcon className="w-6 h-6" />
@@ -157,44 +165,47 @@ export default function StudentDashboard() {
           </div>
         ) : (
           <div className="divide-y divide-slate-800">
-            {recentBookings.map((b) => (
-              <div key={b.id} className="py-4 flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <p className="font-semibold text-white text-sm">
-                    Booking #{b.booking_reference}
-                  </p>
-                  <p className="text-xs text-slate-400 flex items-center space-x-2 mt-1">
-                    <span className="flex items-center space-x-1">
-                      <CalendarIcon className="w-3.5 h-3.5" />
-                      <span>{new Date(b.travel_date).toLocaleDateString()}</span>
+            {recentBookings.map((b) => {
+              const r = routesMap[b.route_id];
+              return (
+                <div key={b.id} className="py-4 flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <p className="font-semibold text-white text-sm">
+                      Booking #{b.booking_reference}
+                      {r ? ` — ${r.route_name}` : ''}
+                    </p>
+                    <p className="text-xs text-slate-400 flex items-center space-x-2 mt-1">
+                      <span className="flex items-center space-x-1">
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        <span>{new Date(b.travel_date).toLocaleDateString()}</span>
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <span
+                      className={`text-xs px-2.5 py-1 rounded-full uppercase font-mono font-semibold ${
+                        b.status === 'confirmed'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : b.status === 'pending'
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : 'bg-slate-800 text-slate-400 border border-slate-700'
+                      }`}
+                    >
+                      {b.status}
                     </span>
-                  </p>
+                    <Link
+                      to="/student/bookings"
+                      className="text-xs font-medium text-slate-300 hover:text-white underline"
+                    >
+                      Details
+                    </Link>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full uppercase font-mono font-semibold ${
-                      b.status === 'confirmed'
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : b.status === 'pending'
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        : 'bg-slate-800 text-slate-400 border border-slate-700'
-                    }`}
-                  >
-                    {b.status}
-                  </span>
-                  <Link
-                    to="/student/bookings"
-                    className="text-xs font-medium text-slate-300 hover:text-white underline"
-                  >
-                    Details
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
     </div>
   );
 }
-

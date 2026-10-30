@@ -176,14 +176,14 @@ git push origin feature/frontend
 ---
 
 ## ✅ Checklist
-- [ ] Auth: Login + Register pages
-- [ ] Student: Route list page
-- [ ] Student: Booking page + date picker
-- [ ] Student: Payment with Razorpay
-- [ ] Student: My Bookings with QR display
-- [ ] Scanner: QR camera scanner
-- [ ] Admin: Dashboard stats
-- [ ] Admin: Bus management
-- [ ] Admin: Route management
-- [ ] Protected routes (role-based)
-- [ ] Responsive UI with Tailwind
+- [x] Auth: Login + Register pages
+- [x] Student: Route list page
+- [x] Student: Booking page + date picker
+- [x] Student: Payment with Razorpay
+- [x] Student: My Bookings with QR display
+- [x] Scanner: QR camera scanner
+- [x] Admin: Dashboard stats
+- [x] Admin: Bus management
+- [x] Admin: Route management
+- [x] Protected routes (role-based)
+- [x] Responsive UI with Tailwind

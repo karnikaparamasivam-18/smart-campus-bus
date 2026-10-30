@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BusIcon, QrIcon, TicketIcon, ShieldIcon, UserIcon, LogOutIcon } from './Icons';
+import { BusIcon, QrIcon, UserIcon, LogOutIcon } from './Icons';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout, role } = useAuth();
@@ -89,6 +89,12 @@ export default function Navbar() {
                 </Link>
                 <Link to="/admin/users" className={linkClass('/admin/users')}>
                   Users
+                </Link>
+                <Link to="/scanner" className={linkClass('/scanner')}>
+                  <span className="flex items-center space-x-1.5">
+                    <QrIcon className="w-4 h-4" />
+                    <span>Scanner</span>
+                  </span>
                 </Link>
               </>
             )}
@@ -248,6 +254,13 @@ export default function Navbar() {
                   >
                     Users
                   </Link>
+                  <Link
+                    to="/scanner"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800"
+                  >
+                    QR Scanner
+                  </Link>
                 </>
               )}
 
@@ -285,4 +298,3 @@ export default function Navbar() {
     </nav>
   );
 }
-

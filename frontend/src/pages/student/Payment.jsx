@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { paymentsApi } from '../../api/payments';
 import { bookingsApi } from '../../api/bookings';
+import { routesApi } from '../../api/routes';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { CreditCardIcon, CheckCircleIcon, ArrowRightIcon, BusIcon } from '../../components/Icons';
@@ -12,6 +13,7 @@ export default function Payment() {
   const { user } = useAuth();
 
   const [booking, setBooking] = useState(null);
+  const [route, setRoute] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -25,6 +27,15 @@ export default function Payment() {
           if (found.status === 'confirmed') {
             toast.success('This booking is already confirmed!');
             navigate('/student/bookings');
+            return;
+          }
+          if (found.route_id) {
+            try {
+              const routeData = await routesApi.getRouteById(found.route_id);
+              setRoute(routeData);
+            } catch (routeErr) {
+              console.error('Could not fetch route details:', routeErr);
+            }
           }
         }
       } catch (err) {
@@ -152,6 +163,20 @@ export default function Payment() {
               <span className="text-slate-400">Passenger:</span>
               <span className="font-medium text-white">{user?.full_name}</span>
             </div>
+            {route && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Route:</span>
+                  <span className="font-medium text-white">{route.route_name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Transit:</span>
+                  <span className="font-medium text-slate-200 font-mono text-xs">
+                    {route.origin} → {route.destination}
+                  </span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between">
               <span className="text-slate-400">Travel Date:</span>
               <span className="font-medium text-white">
@@ -169,7 +194,7 @@ export default function Payment() {
           <div className="pt-4 border-t border-slate-800 flex justify-between items-center">
             <span className="text-base font-bold text-slate-200">Total Payable Amount</span>
             <span className="text-3xl font-extrabold text-white">
-              ₹{booking?.route?.fare || 50}
+              ₹{route?.fare ?? booking?.route?.fare ?? 50}
             </span>
           </div>
         </div>
@@ -199,4 +224,3 @@ export default function Payment() {
     </div>
   );
 }
-
