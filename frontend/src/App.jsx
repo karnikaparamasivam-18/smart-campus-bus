@@ -1,35 +1,161 @@
-import React from 'react'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './context/AuthContext';
+
+import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Pages
+import Home from './pages/Home';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+
+// Student Pages
+import StudentDashboard from './pages/student/StudentDashboard';
+import ViewRoutes from './pages/student/ViewRoutes';
+import BookTicket from './pages/student/BookTicket';
+import Payment from './pages/student/Payment';
+import MyBookings from './pages/student/MyBookings';
+
+// Scanner Pages
+import QRScanner from './pages/scanner/QRScanner';
+
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ManageBuses from './pages/admin/ManageBuses';
+import ManageRoutes from './pages/admin/ManageRoutes';
+import AllBookings from './pages/admin/AllBookings';
+import AllUsers from './pages/admin/AllUsers';
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6">
-      <div className="max-w-md w-full bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700 text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500/20 text-indigo-400 text-3xl mb-4">
-          🚌
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-white mb-2">
-          Smart Campus Bus
-        </h1>
-        <p className="text-sm text-slate-400 mb-6">
-          Frontend initialized and Docker container ready.
-        </p>
+    <Router>
+      <AuthProvider>
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+          <Navbar />
+          <main className="flex-1">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-        <div className="bg-slate-900/60 rounded-xl p-4 text-left border border-slate-700/60 font-mono text-xs text-slate-300 space-y-2">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span className="text-slate-400">Environment:</span>
-            <span className="text-emerald-400 font-medium">Containerized</span>
-          </div>
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span className="text-slate-400">Proxy Target:</span>
-            <span className="text-indigo-400 font-medium">/api/v1</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400">DevOps Task:</span>
-            <span className="text-teal-400 font-medium">Docker + Nginx</span>
-          </div>
+              {/* Student Routes */}
+              <Route
+                path="/student"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <StudentDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/routes"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <ViewRoutes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/book/:routeId"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <BookTicket />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/payment/:bookingId"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <Payment />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/bookings"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <MyBookings />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Scanner Route */}
+              <Route
+                path="/scanner"
+                element={
+                  <ProtectedRoute allowedRoles={['scanner', 'admin']}>
+                    <QRScanner />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin Routes */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/buses"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <ManageBuses />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/routes"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <ManageRoutes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/bookings"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AllBookings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AllUsers />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+
+          {/* Toast Notification Provider */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3500,
+              style: {
+                background: '#0f172a',
+                color: '#f8fafc',
+                border: '1px solid #1e293b',
+                borderRadius: '0.875rem',
+                fontSize: '0.875rem',
+              },
+            }}
+          />
         </div>
-      </div>
-    </div>
-  )
+      </AuthProvider>
+    </Router>
+  );
 }
-
