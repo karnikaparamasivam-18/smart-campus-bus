@@ -29,6 +29,8 @@ def create_user(db: Session, user_in: UserCreate) -> User:
         full_name=user_in.full_name,
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
+        # Public registration is student-only. Privileged accounts must be
+        # provisioned through a separate, authorized admin workflow.
         role=UserRole.STUDENT,
     )
     db.add(user)

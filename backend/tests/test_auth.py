@@ -47,8 +47,7 @@ def test_register_and_login(client):
     resp = client.post("/api/v1/auth/register", json={
         "email": "student@test.com",
         "full_name": "Test Student",
-        "password": "password123",
-        "role": "student"
+        "password": "password123"
     })
     assert resp.status_code == 201
     assert resp.json()["email"] == "student@test.com"
@@ -65,7 +64,7 @@ def test_register_and_login(client):
 
 
 def test_register_duplicate_email(client):
-    payload = {"email": "dup@test.com", "full_name": "Dup User", "password": "pass123", "role": "student"}
+    payload = {"email": "dup@test.com", "full_name": "Dup User", "password": "pass123"}
     client.post("/api/v1/auth/register", json=payload)
     resp = client.post("/api/v1/auth/register", json=payload)
     assert resp.status_code == 400
@@ -73,7 +72,7 @@ def test_register_duplicate_email(client):
 
 def test_login_wrong_password(client):
     client.post("/api/v1/auth/register", json={
-        "email": "a@test.com", "full_name": "A", "password": "correct", "role": "student"
+        "email": "a@test.com", "full_name": "A", "password": "correct"
     })
     resp = client.post("/api/v1/auth/login", json={"email": "a@test.com", "password": "wrong"})
     assert resp.status_code == 401
@@ -82,3 +81,24 @@ def test_login_wrong_password(client):
 def test_get_profile_requires_auth(client):
     resp = client.get("/api/v1/users/me")
     assert resp.status_code == 401
+
+
+def test_public_registration_always_creates_student(client):
+    # Even if a client tries to self-assign an admin role, the public
+    # registration schema rejects the extra field.
+    resp = client.post("/api/v1/auth/register", json={
+        "email": "attacker@test.com",
+        "full_name": "Attempted Admin",
+        "password": "password123",
+        "role": "admin",
+    })
+    assert resp.status_code == 422
+
+    # A valid public registration creates a student account.
+    resp = client.post("/api/v1/auth/register", json={
+        "email": "student-only@test.com",
+        "full_name": "Student Only",
+        "password": "password123",
+    })
+    assert resp.status_code == 201
+    assert resp.json()["role"] == "student"

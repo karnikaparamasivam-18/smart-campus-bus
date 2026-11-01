@@ -99,10 +99,33 @@ def validate_qr(db: Session, qr_token: str, scanner: User) -> dict:
         return {"valid": False, "message": "Payment not completed for this booking"}
 
     # Mark as used
-    booking.status = BookingStatus.USED
-    booking.scanned_at = datetime.utcnow()
-    booking.scanned_by = scanner.id
+    # Atomically claim the ticket.
+    # Only one request can change CONFIRMED to USED.
+    updated_rows = (
+        db.query(Booking)
+        .filter(
+            Booking.id == booking.id,
+            Booking.status == BookingStatus.CONFIRMED,
+        )
+        .update(
+            {
+                Booking.status: BookingStatus.USED,
+                Booking.scanned_at: datetime.utcnow(),
+                Booking.scanned_by: scanner.id,
+            },
+            synchronize_session=False,
+        )
+    )
+
+    if updated_rows != 1:
+        db.rollback()
+        return {
+            "valid": False,
+            "message": "QR already used or ticket no longer valid",
+        }
+
     db.commit()
+    db.refresh(booking)
 
     student = db.query(User).filter(User.id == booking.student_id).first()
     route = booking.route

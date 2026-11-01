@@ -1,3 +1,4 @@
+
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
@@ -10,8 +11,21 @@ class UserBase(BaseModel):
     role: UserRole = UserRole.STUDENT
 
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
+    email: EmailStr
+    full_name: str
     password: str
+
+    model_config = {"extra": "forbid"}
+
+
+class StaffCreate(BaseModel):
+    email: EmailStr
+    full_name: str
+    password: str
+    role: UserRole
+
+    model_config = {"extra": "forbid"}
 
 
 class UserUpdate(BaseModel):

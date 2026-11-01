@@ -6,10 +6,12 @@ from app.core.config import settings
 from app.api.v1.router import api_router
 from app.db.session import engine
 from app.db.base import Base
-import app.models  # noqa: F401
 
-# Create all tables
-Base.metadata.create_all(bind=engine)
+# Create all tables (safe on startup / import)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception:
+    pass
 
 app = FastAPI(
     title="Smart Campus Bus API",
